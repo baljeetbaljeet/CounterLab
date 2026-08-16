@@ -12,8 +12,7 @@ export const DEMO_CSV = [
   "B,Severe,0,25",
 ].join("\n");
 
-export const DEMO_CLAIM =
-  "Treatment B produces a higher recovery rate than Treatment A.";
+export const DEMO_CLAIM = "Treatment B produces a higher recovery rate than Treatment A.";
 
 export const DEMO_CONFIG: AnalysisConfig = {
   claim: DEMO_CLAIM,
@@ -39,13 +38,26 @@ export interface ResearchDemo {
 }
 
 const continuousRows = [
-  ["A", "Site 1", 118], ["A", "Site 1", 121], ["A", "Site 1", 116],
-  ["A", "Site 1", 125], ["A", "Site 1", 119], ["A", "Site 2", 130],
-  ["A", "Site 2", 128], ["A", "Site 2", 135], ["A", "Site 2", 126],
-  ["A", "Site 2", 132], ["B", "Site 1", 109], ["B", "Site 1", 112],
-  ["B", "Site 1", 115], ["B", "Site 1", 108], ["B", "Site 1", 111],
-  ["B", "Site 2", 119], ["B", "Site 2", 121], ["B", "Site 2", 117],
-  ["B", "Site 2", 123], ["B", "Site 2", 116],
+  ["A", "Site 1", 118],
+  ["A", "Site 1", 121],
+  ["A", "Site 1", 116],
+  ["A", "Site 1", 125],
+  ["A", "Site 1", 119],
+  ["A", "Site 2", 130],
+  ["A", "Site 2", 128],
+  ["A", "Site 2", 135],
+  ["A", "Site 2", 126],
+  ["A", "Site 2", 132],
+  ["B", "Site 1", 109],
+  ["B", "Site 1", 112],
+  ["B", "Site 1", 115],
+  ["B", "Site 1", 108],
+  ["B", "Site 1", 111],
+  ["B", "Site 2", 119],
+  ["B", "Site 2", 121],
+  ["B", "Site 2", 117],
+  ["B", "Site 2", 123],
+  ["B", "Site 2", 116],
 ];
 const continuousCsv = [
   "treatment,site,blood_pressure",
@@ -56,7 +68,7 @@ const associationCsv = [
   "dose,biomarker",
   ...Array.from({ length: 28 }, (_, index) => {
     const dose = index + 1;
-    const biomarker = 22 + dose * 1.65 + ((index * 7) % 9 - 4) * 0.8;
+    const biomarker = 22 + dose * 1.65 + (((index * 7) % 9) - 4) * 0.8;
     return `${dose},${biomarker.toFixed(1)}`;
   }),
 ].join("\n");

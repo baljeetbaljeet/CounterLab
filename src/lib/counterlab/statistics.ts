@@ -26,8 +26,9 @@ export function erf(value: number): number {
   const t = 1 / (1 + 0.3275911 * absolute);
   const approximation =
     1 -
-    (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t -
-      0.284496736) * t + 0.254829592) * t * Math.exp(-absolute * absolute));
+    ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) *
+      t *
+      Math.exp(-absolute * absolute);
   return sign * approximation;
 }
 
@@ -37,14 +38,8 @@ export function normalCdf(value: number): number {
 
 function logGamma(value: number): number {
   const coefficients = [
-    676.5203681218851,
-    -1259.1392167224028,
-    771.3234287776531,
-    -176.6150291621406,
-    12.507343278686905,
-    -0.13857109526572012,
-    9.984369578019572e-6,
-    1.5056327351493116e-7,
+    676.5203681218851, -1259.1392167224028, 771.3234287776531, -176.6150291621406,
+    12.507343278686905, -0.13857109526572012, 9.984369578019572e-6, 1.5056327351493116e-7,
   ];
   if (value < 0.5) {
     return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * value)) - logGamma(1 - value);
@@ -272,7 +267,9 @@ export function trimmedMean(values: number[], proportion = 0.1): number {
 }
 
 export function averageRanks(values: number[]): number[] {
-  const ordered = values.map((value, index) => ({ value, index })).sort((a, b) => a.value - b.value);
+  const ordered = values
+    .map((value, index) => ({ value, index }))
+    .sort((a, b) => a.value - b.value);
   const ranks = Array<number>(values.length);
   let index = 0;
   while (index < ordered.length) {
@@ -335,11 +332,7 @@ export interface RegressionResult extends IntervalEstimate {
   residuals: number[];
 }
 
-export function linearRegression(
-  x: number[],
-  y: number[],
-  hacLag = 0,
-): RegressionResult {
+export function linearRegression(x: number[], y: number[], hacLag = 0): RegressionResult {
   if (x.length !== y.length || x.length < 4) {
     throw new Error("Trend regression requires at least four complete observations.");
   }
@@ -357,12 +350,17 @@ export function linearRegression(
 
   let varianceSlope: number;
   if (hacLag <= 0) {
-    varianceSlope = (sse / (n - 2)) / sxx;
+    varianceSlope = sse / (n - 2) / sxx;
   } else {
     const sumX = x.reduce((sum, value) => sum + value, 0);
     const sumXX = x.reduce((sum, value) => sum + value * value, 0);
     const determinant = n * sumXX - sumX * sumX;
-    const inverse = [sumXX / determinant, -sumX / determinant, -sumX / determinant, n / determinant];
+    const inverse = [
+      sumXX / determinant,
+      -sumX / determinant,
+      -sumX / determinant,
+      n / determinant,
+    ];
     let s00 = 0;
     let s01 = 0;
     let s11 = 0;
@@ -404,9 +402,10 @@ export function linearRegression(
 
 export function theilSenSlope(x: number[], y: number[]): number {
   const maximum = 250;
-  const indices = x.length <= maximum
-    ? x.map((_, index) => index)
-    : Array.from({ length: maximum }, (_, index) => Math.floor((index * x.length) / maximum));
+  const indices =
+    x.length <= maximum
+      ? x.map((_, index) => index)
+      : Array.from({ length: maximum }, (_, index) => Math.floor((index * x.length) / maximum));
   const slopes: number[] = [];
   for (let left = 0; left < indices.length; left += 1) {
     for (let right = left + 1; right < indices.length; right += 1) {

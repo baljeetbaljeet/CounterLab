@@ -33,12 +33,7 @@ export interface AnalysisConfig {
 }
 
 export type SpecificationFamily =
-  | "Unadjusted"
-  | "Adjusted"
-  | "Subgroup"
-  | "Robustness"
-  | "Association"
-  | "Trend";
+  "Unadjusted" | "Adjusted" | "Subgroup" | "Robustness" | "Association" | "Trend";
 
 export type EvidenceStatus = "supports" | "challenges" | "uncertain";
 
@@ -116,17 +111,9 @@ export interface ClaimSchema {
 }
 
 export type ResearchAnalysisKind =
-  | "binary-comparison"
-  | "continuous-comparison"
-  | "association"
-  | "time-series";
+  "binary-comparison" | "continuous-comparison" | "association" | "time-series";
 
-export type EffectScale =
-  | "proportion"
-  | "raw"
-  | "correlation"
-  | "per-day"
-  | "per-time-unit";
+export type EffectScale = "proportion" | "raw" | "correlation" | "per-day" | "per-time-unit";
 
 export interface ResearchConfig {
   kind: ResearchAnalysisKind;

@@ -36,8 +36,7 @@ function rowWeight(row: DataRow, weightColumn?: string): number {
     return 1;
   }
   const value = row[weightColumn];
-  const numeric =
-    typeof value === "number" ? value : Number(String(value ?? ""));
+  const numeric = typeof value === "number" ? value : Number(String(value ?? ""));
   return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
 }
 
@@ -91,10 +90,7 @@ function erf(value: number): number {
   const p = 0.3275911;
   const t = 1 / (1 + p * absolute);
   const approximation =
-    1 -
-    (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) *
-      t *
-      Math.exp(-absolute * absolute));
+    1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-absolute * absolute);
   return sign * approximation;
 }
 
@@ -107,23 +103,11 @@ function riskDifference(
   config: AnalysisConfig,
   stratum?: CellValue,
 ): RiskDifference {
-  const reference = weightedRate(
-    rows,
-    config,
-    config.referenceGroup,
-    stratum,
-  );
-  const comparison = weightedRate(
-    rows,
-    config,
-    config.comparisonGroup,
-    stratum,
-  );
+  const reference = weightedRate(rows, config, config.referenceGroup, stratum);
+  const comparison = weightedRate(rows, config, config.comparisonGroup, stratum);
 
   if (reference.total === 0 || comparison.total === 0) {
-    throw new Error(
-      "Both comparison groups need observations in every analyzed stratum.",
-    );
+    throw new Error("Both comparison groups need observations in every analyzed stratum.");
   }
 
   const estimate = comparison.rate - reference.rate;
@@ -146,11 +130,7 @@ function riskDifference(
   };
 }
 
-function evidenceStatus(
-  ciLow: number,
-  ciHigh: number,
-  claimDirection: 1 | -1,
-): EvidenceStatus {
+function evidenceStatus(ciLow: number, ciHigh: number, claimDirection: 1 | -1): EvidenceStatus {
   if (claimDirection === 1 && ciLow > 0) {
     return "supports";
   }
@@ -186,11 +166,7 @@ function makeSpecification(
     ciHigh: result.ciHigh,
     pValue: result.pValue,
     sampleSize: result.sampleSize,
-    status: evidenceStatus(
-      result.ciLow,
-      result.ciHigh,
-      config.claimDirection,
-    ),
+    status: evidenceStatus(result.ciLow, result.ciHigh, config.claimDirection),
     covariates,
     evidence,
   };
@@ -218,19 +194,12 @@ function pooledRiskDifference(
   );
   const variance = strata.reduce(
     (sum, item, index) =>
-      sum +
-      normalizedWeights[index] *
-        normalizedWeights[index] *
-        item.result.variance,
+      sum + normalizedWeights[index] * normalizedWeights[index] * item.result.variance,
     0,
   );
   const standardError = Math.sqrt(Math.max(variance, 1e-12));
-  const pValue =
-    2 * (1 - normalCdf(Math.abs(estimate / Math.max(standardError, 1e-9))));
-  const sampleSize = strata.reduce(
-    (sum, item) => sum + item.result.sampleSize,
-    0,
-  );
+  const pValue = 2 * (1 - normalCdf(Math.abs(estimate / Math.max(standardError, 1e-9))));
+  const sampleSize = strata.reduce((sum, item) => sum + item.result.sampleSize, 0);
 
   return {
     estimate,
@@ -268,20 +237,12 @@ function calculateDistribution(
   const comparisonTotals = strata.map((value) =>
     weightedRate(rows, config, config.comparisonGroup, value),
   );
-  const referenceAll = referenceTotals.reduce(
-    (sum, rate) => sum + rate.total,
-    0,
-  );
-  const comparisonAll = comparisonTotals.reduce(
-    (sum, rate) => sum + rate.total,
-    0,
-  );
+  const referenceAll = referenceTotals.reduce((sum, rate) => sum + rate.total, 0);
+  const comparisonAll = comparisonTotals.reduce((sum, rate) => sum + rate.total, 0);
 
   return strata.map((stratum, index) => {
-    const referenceShare =
-      referenceAll > 0 ? referenceTotals[index].total / referenceAll : 0;
-    const comparisonShare =
-      comparisonAll > 0 ? comparisonTotals[index].total / comparisonAll : 0;
+    const referenceShare = referenceAll > 0 ? referenceTotals[index].total / referenceAll : 0;
+    const comparisonShare = comparisonAll > 0 ? comparisonTotals[index].total / comparisonAll : 0;
     return {
       stratum: String(stratum),
       referenceShare,
@@ -295,10 +256,7 @@ function totalObservations(rows: DataRow[], weight?: string): number {
   return rows.reduce((sum, row) => sum + rowWeight(row, weight), 0);
 }
 
-export function analyzeClaim(
-  rows: DataRow[],
-  config: AnalysisConfig,
-): AnalysisResult {
+export function analyzeClaim(rows: DataRow[], config: AnalysisConfig): AnalysisResult {
   if (!rows.length) {
     throw new Error("The dataset has no analyzable rows.");
   }
@@ -386,9 +344,7 @@ export function analyzeClaim(
           item.result,
           config,
           [config.stratifier],
-          "Effect estimated only within the " +
-            String(item.value) +
-            " stratum.",
+          "Effect estimated only within the " + String(item.value) + " stratum.",
         ),
       );
     }
@@ -438,16 +394,12 @@ export function analyzeClaim(
       config,
       strataResults.map((item) => item.value),
     );
-    maxImbalance = distribution.length
-      ? Math.max(...distribution.map((row) => row.gap))
-      : null;
+    maxImbalance = distribution.length ? Math.max(...distribution.map((row) => row.gap)) : null;
   }
 
   const overallSign = Math.sign(overall.estimate);
   const adjustedSign = adjustedEffect === null ? 0 : Math.sign(adjustedEffect);
-  const subgroupSigns = strataResults.map((item) =>
-    Math.sign(item.result.estimate),
-  );
+  const subgroupSigns = strataResults.map((item) => Math.sign(item.result.estimate));
   const oppositeSubgroups = subgroupSigns.filter(
     (sign) => sign !== 0 && sign === -overallSign,
   ).length;
@@ -460,9 +412,7 @@ export function analyzeClaim(
   const supportsClaim = specifications.filter(
     (item) => Math.sign(item.estimate) === config.claimDirection,
   ).length;
-  const conclusive = specifications.filter(
-    (item) => item.status !== "uncertain",
-  ).length;
+  const conclusive = specifications.filter((item) => item.status !== "uncertain").length;
   const signStability = supportsClaim / specifications.length;
   const conclusiveRate = conclusive / specifications.length;
 
@@ -471,16 +421,12 @@ export function analyzeClaim(
   if (reversalFound) {
     verdict = "Fragile";
     verdictTone = "negative";
-  } else if (
-    specifications.length >= 3 &&
-    (signStability >= 0.8 || signStability <= 0.2)
-  ) {
+  } else if (specifications.length >= 3 && (signStability >= 0.8 || signStability <= 0.2)) {
     verdict = "Robust";
     verdictTone = "positive";
   }
 
-  const directionWord =
-    overall.estimate * config.claimDirection > 0 ? "supported" : "challenged";
+  const directionWord = overall.estimate * config.claimDirection > 0 ? "supported" : "challenged";
   const adjustedDirectionWord =
     adjustedEffect !== null && adjustedEffect * config.claimDirection < 0
       ? "reversed"
@@ -502,9 +448,7 @@ export function analyzeClaim(
     (config.stratifier ?? "the selected covariate") +
     ", the direction " +
     adjustedDirectionWord +
-    (adjustedEffect === null
-      ? "."
-      : " to " + formatPoints(adjustedEffect) + ".");
+    (adjustedEffect === null ? "." : " to " + formatPoints(adjustedEffect) + ".");
 
   const findings: string[] = [
     String(config.comparisonGroup) +
@@ -534,17 +478,12 @@ export function analyzeClaim(
   const trace: AnalysisResult["trace"] = [
     {
       title: "Schema validated",
-      detail:
-        rows.length +
-        " source rows mapped to a binary outcome and two comparison groups.",
+      detail: rows.length + " source rows mapped to a binary outcome and two comparison groups.",
       state: "complete",
     },
     {
       title: "Aggregate estimate reproduced",
-      detail:
-        "The unadjusted risk difference is " +
-        formatPoints(overall.estimate) +
-        ".",
+      detail: "The unadjusted risk difference is " + formatPoints(overall.estimate) + ".",
       state: overall.estimate * config.claimDirection > 0 ? "complete" : "warning",
     },
   ];
@@ -555,15 +494,13 @@ export function analyzeClaim(
         maxImbalance === null
           ? "No complete stratified comparison was available."
           : "Maximum distribution gap: " + formatPercent(maxImbalance) + ".",
-      state:
-        maxImbalance !== null && maxImbalance >= 0.15 ? "warning" : "complete",
+      state: maxImbalance !== null && maxImbalance >= 0.15 ? "warning" : "complete",
     });
   }
   if (reversalFound) {
     trace.push({
       title: "Direction reversal confirmed",
-      detail:
-        "The adjusted and majority subgroup estimates oppose the aggregate result.",
+      detail: "The adjusted and majority subgroup estimates oppose the aggregate result.",
       state: "discovery",
     });
   }
@@ -579,10 +516,7 @@ export function analyzeClaim(
     groupRates,
     aggregateEffect: overall.estimate,
     adjustedEffect,
-    reversalMagnitude:
-      adjustedEffect === null
-        ? null
-        : Math.abs(overall.estimate - adjustedEffect),
+    reversalMagnitude: adjustedEffect === null ? null : Math.abs(overall.estimate - adjustedEffect),
     reversalFound,
     signStability,
     conclusiveRate,

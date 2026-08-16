@@ -9,7 +9,9 @@ export interface CompileResponse {
 }
 
 export const compileClaim = createServerFn({ method: "POST" })
-  .inputValidator((data: { claim: string; columns: string[]; mapping: unknown; profiles: unknown }) => data)
+  .inputValidator(
+    (data: { claim: string; columns: string[]; mapping: unknown; profiles: unknown }) => data,
+  )
   .handler(async ({ data }): Promise<CompileResponse> => {
     const apiKey = process.env["FEATHERLESS_API_KEY"];
     if (!apiKey || !data.claim.trim() || data.columns.length < 2) {

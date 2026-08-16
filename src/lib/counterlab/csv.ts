@@ -27,12 +27,14 @@ function countOutsideQuotes(input: string, character: string): number {
 function detectDelimiter(input: string): string {
   const firstRecord = input.split(/\r?\n/, 1)[0] ?? "";
   const candidates = [",", "\t", ";", "|"];
-  return candidates
-    .map((delimiter) => ({
-      delimiter,
-      count: countOutsideQuotes(firstRecord, delimiter),
-    }))
-    .sort((left, right) => right.count - left.count)[0]?.delimiter ?? ",";
+  return (
+    candidates
+      .map((delimiter) => ({
+        delimiter,
+        count: countOutsideQuotes(firstRecord, delimiter),
+      }))
+      .sort((left, right) => right.count - left.count)[0]?.delimiter ?? ","
+  );
 }
 
 function tokenizeDelimited(input: string, delimiter: string): string[][] {
@@ -147,10 +149,7 @@ function jsonValue(value: unknown): CellValue {
   return JSON.stringify(value);
 }
 
-function recordsToDataset(
-  decoded: unknown,
-  format: "json" | "jsonl",
-): ParsedDataset {
+function recordsToDataset(decoded: unknown, format: "json" | "jsonl"): ParsedDataset {
   if (!Array.isArray(decoded) || decoded.length === 0) {
     throw new Error("JSON datasets must contain one or more record objects.");
   }
@@ -265,7 +264,8 @@ export function profileColumns(dataset: ParsedDataset): ColumnProfile[] {
     if (numericValues.length) {
       profile.numericMinimum = Math.min(...numericValues);
       profile.numericMaximum = Math.max(...numericValues);
-      profile.numericMean = numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
+      profile.numericMean =
+        numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
     }
     return profile;
   });
@@ -281,9 +281,15 @@ function profileMap(dataset: ParsedDataset): Map<string, ColumnProfile> {
 }
 
 function defaultPositive(values: CellValue[]): CellValue {
-  return values.find((value) =>
-    ["1", "true", "yes", "success", "positive", "recovered", "case"].includes(String(value).toLowerCase()),
-  ) ?? values[values.length - 1] ?? null;
+  return (
+    values.find((value) =>
+      ["1", "true", "yes", "success", "positive", "recovered", "case"].includes(
+        String(value).toLowerCase(),
+      ),
+    ) ??
+    values[values.length - 1] ??
+    null
+  );
 }
 
 export function inferConfigForKind(
@@ -296,29 +302,94 @@ export function inferConfigForKind(
   const binary = dataset.columns.filter((column) => profiles.get(column)?.kind === "binary");
   const categorical = dataset.columns.filter((column) => {
     const profile = profiles.get(column);
-    return profile && (profile.kind === "categorical" || profile.kind === "binary") && profile.uniqueCount <= 30;
+    return (
+      profile &&
+      (profile.kind === "categorical" || profile.kind === "binary") &&
+      profile.uniqueCount <= 30
+    );
   });
   const datetime = dataset.columns.filter((column) => profiles.get(column)?.kind === "datetime");
-  const outcomeHint = namedColumn(dataset.columns, ["outcome", "response", "result", "target", "label", "success", "recovered", "score", "value", "measurement"]);
-  const predictorHint = namedColumn(dataset.columns, ["treatment", "exposure", "intervention", "group", "condition", "predictor", "feature", "dose", "x"]);
+  const outcomeHint = namedColumn(dataset.columns, [
+    "outcome",
+    "response",
+    "result",
+    "target",
+    "label",
+    "success",
+    "recovered",
+    "score",
+    "value",
+    "measurement",
+  ]);
+  const predictorHint = namedColumn(dataset.columns, [
+    "treatment",
+    "exposure",
+    "intervention",
+    "group",
+    "condition",
+    "predictor",
+    "feature",
+    "dose",
+    "x",
+  ]);
   const weight = namedColumn(dataset.columns, ["count", "weight", "frequency", "n"]);
-  const stratifier = namedColumn(dataset.columns, ["severity", "stratum", "site", "age_group", "sex", "cohort"]);
-  const time = namedColumn(dataset.columns, ["date", "time", "timestamp", "visit_date", "recorded_at", "year", "month", "week", "day", "visit", "timepoint"]) ?? datetime[0];
+  const stratifier = namedColumn(dataset.columns, [
+    "severity",
+    "stratum",
+    "site",
+    "age_group",
+    "sex",
+    "cohort",
+  ]);
+  const time =
+    namedColumn(dataset.columns, [
+      "date",
+      "time",
+      "timestamp",
+      "visit_date",
+      "recorded_at",
+      "year",
+      "month",
+      "week",
+      "day",
+      "visit",
+      "timepoint",
+    ]) ?? datetime[0];
 
   let outcome = outcomeHint ?? dataset.columns[dataset.columns.length - 1];
-  let predictor = predictorHint ?? dataset.columns.find((column) => column !== outcome) ?? dataset.columns[0];
+  let predictor =
+    predictorHint ?? dataset.columns.find((column) => column !== outcome) ?? dataset.columns[0];
 
   if (kind === "binary-comparison") {
-    outcome = (outcomeHint && binary.includes(outcomeHint) ? outcomeHint : binary[binary.length - 1]) ?? outcome;
-    predictor = (predictorHint && categorical.includes(predictorHint) ? predictorHint : categorical.find((column) => column !== outcome)) ?? predictor;
+    outcome =
+      (outcomeHint && binary.includes(outcomeHint) ? outcomeHint : binary[binary.length - 1]) ??
+      outcome;
+    predictor =
+      (predictorHint && categorical.includes(predictorHint)
+        ? predictorHint
+        : categorical.find((column) => column !== outcome)) ?? predictor;
   } else if (kind === "continuous-comparison") {
-    outcome = (outcomeHint && numeric.includes(outcomeHint) ? outcomeHint : numeric.find((column) => column !== weight)) ?? outcome;
-    predictor = (predictorHint && categorical.includes(predictorHint) ? predictorHint : categorical.find((column) => column !== outcome)) ?? predictor;
+    outcome =
+      (outcomeHint && numeric.includes(outcomeHint)
+        ? outcomeHint
+        : numeric.find((column) => column !== weight)) ?? outcome;
+    predictor =
+      (predictorHint && categorical.includes(predictorHint)
+        ? predictorHint
+        : categorical.find((column) => column !== outcome)) ?? predictor;
   } else if (kind === "association") {
-    outcome = (outcomeHint && numeric.includes(outcomeHint) ? outcomeHint : numeric[numeric.length - 1]) ?? outcome;
-    predictor = (predictorHint && numeric.includes(predictorHint) ? predictorHint : numeric.find((column) => column !== outcome)) ?? predictor;
+    outcome =
+      (outcomeHint && numeric.includes(outcomeHint) ? outcomeHint : numeric[numeric.length - 1]) ??
+      outcome;
+    predictor =
+      (predictorHint && numeric.includes(predictorHint)
+        ? predictorHint
+        : numeric.find((column) => column !== outcome)) ?? predictor;
   } else {
-    outcome = (outcomeHint && numeric.includes(outcomeHint) ? outcomeHint : numeric.find((column) => column !== weight && column !== time)) ?? outcome;
+    outcome =
+      (outcomeHint && numeric.includes(outcomeHint)
+        ? outcomeHint
+        : numeric.find((column) => column !== weight && column !== time)) ?? outcome;
     predictor = time ?? predictor;
   }
 
@@ -329,15 +400,23 @@ export function inferConfigForKind(
     claim,
     outcome,
     predictor,
-    time: kind === "time-series" ? time ?? predictor : undefined,
+    time: kind === "time-series" ? (time ?? predictor) : undefined,
     stratifier:
       kind === "binary-comparison" || kind === "continuous-comparison"
-        ? stratifier && stratifier !== outcome && stratifier !== predictor ? stratifier : undefined
+        ? stratifier && stratifier !== outcome && stratifier !== predictor
+          ? stratifier
+          : undefined
         : undefined,
     weight: kind === "binary-comparison" || kind === "continuous-comparison" ? weight : undefined,
     positiveOutcome: kind === "binary-comparison" ? defaultPositive(outcomes) : undefined,
-    referenceGroup: kind === "binary-comparison" || kind === "continuous-comparison" ? groups[0] ?? null : undefined,
-    comparisonGroup: kind === "binary-comparison" || kind === "continuous-comparison" ? groups[1] ?? groups[0] ?? null : undefined,
+    referenceGroup:
+      kind === "binary-comparison" || kind === "continuous-comparison"
+        ? (groups[0] ?? null)
+        : undefined,
+    comparisonGroup:
+      kind === "binary-comparison" || kind === "continuous-comparison"
+        ? (groups[1] ?? groups[0] ?? null)
+        : undefined,
     claimDirection: 1,
   };
 }
@@ -345,39 +424,104 @@ export function inferConfigForKind(
 export function detectResearchConfig(dataset: ParsedDataset): ResearchConfig {
   const profiles = profileColumns(dataset);
   const byName = new Map(profiles.map((profile) => [profile.name, profile]));
-  const namedTime = namedColumn(dataset.columns, ["date", "time", "timestamp", "visit_date", "recorded_at", "year", "month", "week", "day", "visit", "timepoint"]);
-  const time = profiles.find((profile) => profile.kind === "datetime") ??
+  const namedTime = namedColumn(dataset.columns, [
+    "date",
+    "time",
+    "timestamp",
+    "visit_date",
+    "recorded_at",
+    "year",
+    "month",
+    "week",
+    "day",
+    "visit",
+    "timepoint",
+  ]);
+  const time =
+    profiles.find((profile) => profile.kind === "datetime") ??
     (namedTime && byName.get(namedTime)?.kind === "numeric" ? byName.get(namedTime) : undefined);
-  const numeric = profiles.filter((profile) => profile.kind === "numeric" && !/^(?:count|weight|frequency|n)$/i.test(profile.name));
+  const numeric = profiles.filter(
+    (profile) =>
+      profile.kind === "numeric" && !/^(?:count|weight|frequency|n)$/i.test(profile.name),
+  );
   const binaryProfiles = profiles.filter((profile) => profile.kind === "binary");
-  const binary = binaryProfiles.find((profile) => /(?:outcome|response|result|target|label|success|recovered|case)/i.test(profile.name));
-  const outcomeHint = namedColumn(dataset.columns, ["outcome", "response", "result", "target", "label", "success", "recovered", "score", "value", "measurement"]);
+  const binary = binaryProfiles.find((profile) =>
+    /(?:outcome|response|result|target|label|success|recovered|case)/i.test(profile.name),
+  );
+  const outcomeHint = namedColumn(dataset.columns, [
+    "outcome",
+    "response",
+    "result",
+    "target",
+    "label",
+    "success",
+    "recovered",
+    "score",
+    "value",
+    "measurement",
+  ]);
   const outcomeProfile = outcomeHint ? byName.get(outcomeHint) : undefined;
-  const groupHint = namedColumn(dataset.columns, ["treatment", "exposure", "intervention", "group", "condition"]);
+  const groupHint = namedColumn(dataset.columns, [
+    "treatment",
+    "exposure",
+    "intervention",
+    "group",
+    "condition",
+  ]);
   const groupProfile = groupHint ? byName.get(groupHint) : undefined;
-  const groupProfiles = profiles.filter((profile) =>
-    (profile.kind === "categorical" || profile.kind === "binary") && profile.uniqueCount <= 30,
+  const groupProfiles = profiles.filter(
+    (profile) =>
+      (profile.kind === "categorical" || profile.kind === "binary") && profile.uniqueCount <= 30,
   );
 
   if (time && numeric.some((profile) => profile.name !== time.name)) {
     return inferConfigForKind(dataset, "time-series", "The measured outcome changes over time.");
   }
-  if ((binary || outcomeProfile?.kind === "binary") && groupProfile && groupProfile.kind !== "numeric") {
-    return inferConfigForKind(dataset, "binary-comparison", "The comparison group has a higher positive-outcome rate.");
+  if (
+    (binary || outcomeProfile?.kind === "binary") &&
+    groupProfile &&
+    groupProfile.kind !== "numeric"
+  ) {
+    return inferConfigForKind(
+      dataset,
+      "binary-comparison",
+      "The comparison group has a higher positive-outcome rate.",
+    );
   }
   if (numeric.length && groupProfile && groupProfile.kind !== "numeric") {
-    return inferConfigForKind(dataset, "continuous-comparison", "The comparison group has a higher average outcome.");
+    return inferConfigForKind(
+      dataset,
+      "continuous-comparison",
+      "The comparison group has a higher average outcome.",
+    );
   }
   if (numeric.length >= 2) {
-    return inferConfigForKind(dataset, "association", "Higher predictor values are associated with higher outcome values.");
+    return inferConfigForKind(
+      dataset,
+      "association",
+      "Higher predictor values are associated with higher outcome values.",
+    );
   }
   if (numeric.length === 1 && groupProfiles.some((profile) => profile.name !== numeric[0].name)) {
-    return inferConfigForKind(dataset, "continuous-comparison", "The comparison group has a higher average outcome.");
+    return inferConfigForKind(
+      dataset,
+      "continuous-comparison",
+      "The comparison group has a higher average outcome.",
+    );
   }
-  if (binaryProfiles.length && groupProfiles.some((profile) => profile.name !== binaryProfiles[binaryProfiles.length - 1].name)) {
-    return inferConfigForKind(dataset, "binary-comparison", "The comparison group has a higher positive-outcome rate.");
+  if (
+    binaryProfiles.length &&
+    groupProfiles.some((profile) => profile.name !== binaryProfiles[binaryProfiles.length - 1].name)
+  ) {
+    return inferConfigForKind(
+      dataset,
+      "binary-comparison",
+      "The comparison group has a higher positive-outcome rate.",
+    );
   }
-  throw new Error("CounterLab could not identify a supported analysis. Include a numeric or binary outcome plus a group, numeric predictor, or date column.");
+  throw new Error(
+    "CounterLab could not identify a supported analysis. Include a numeric or binary outcome plus a group, numeric predictor, or date column.",
+  );
 }
 
 // Backward-compatible helper used by the original binary path.

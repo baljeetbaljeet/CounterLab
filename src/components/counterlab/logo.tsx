@@ -14,14 +14,7 @@ export function LogoMark({ className = "h-9 w-9" }: { className?: string }) {
         <path d="M24 30V13" />
         <path d="M31 30v-6.5" opacity=".55" />
       </g>
-      <circle
-        cx="31"
-        cy="20"
-        r="4.2"
-        fill="none"
-        stroke="var(--color-accent)"
-        strokeWidth="2.2"
-      />
+      <circle cx="31" cy="20" r="4.2" fill="none" stroke="var(--color-accent)" strokeWidth="2.2" />
     </svg>
   );
 }
